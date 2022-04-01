@@ -3,18 +3,19 @@
 sudo yum update -y
 
 # LDAP Server Installation
-sudo yum install openldap openldap*
+sudo yum install openldap openldap-servers openldap-clients -y
 sudo systemctl start slapd
 sudo systemctl enable slapd
 sudo systemctl status slapd
 
 ADMIN_PASS=$(cat files/admin_pass)
 USER_PASS=$(cat files/user_pass)
+
 PASSWORD=$(slappasswd -s ${ADMIN_PASS})
 PASSWORD2=$(slappasswd -s ${USER_PASS})
 
 #ldaprootpasswd.ldif
-sed -i "s/PASS/${PASSWORD}/g" files/ldaprootpasswd.ldif
+sed -i "s|PASS|${PASSWORD}|g" files/ldaprootpasswd.ldif
 sudo ldapadd -Y EXTERNAL -H ldapi:/// -f files/ldaprootpasswd.ldif
 
 #LDAP DB
@@ -26,7 +27,7 @@ sudo ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/openldap/schema/nis.ldif
 sudo ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/openldap/schema/inetorgperson.ldif
 
 #ldapdomain.ldif
-sed -i "s/PASS/${PASSWORD}/g" files/ldapdomain.ldif
+sed -i "s|PASS|${PASSWORD}|g" files/ldapdomain.ldif
 sudo ldapmodify -Y EXTERNAL -H ldapi:/// -f files/ldapdomain.ldif
 
 #baseldapdomain.ldif
@@ -36,8 +37,9 @@ sudo ldapadd -x -D cn=Manager,dc=devopsldab,dc=com -w ${ADMIN_PASS} -f files/bas
 sudo ldapadd -x -D "cn=Manager,dc=devopsldab,dc=com" -w ${ADMIN_PASS} -f files/ldapgroup.ldif
 
 #ldapuser.ldif
-sed -i "s/USER_PASS/${PASSWORD2}/g" files/ldapuser.ldif
+sed -i "s|USER_PASS|${PASSWORD2}|g" files/ldapuser.ldif
 ldapadd -x -D cn=Manager,dc=devopsldab,dc=com -w ${ADMIN_PASS} -f files/ldapuser.ldif
+
 
 #Install phpldapadmin
 sudo yum --enablerepo=epel -y install phpldapadmin
